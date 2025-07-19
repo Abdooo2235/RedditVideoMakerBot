@@ -128,7 +128,13 @@ def get_subreddit_threads(POST_ID: str):
         else:
             content["thread_post"] = submission.selftext
     else:
-        for top_level_comment in submission.comments:
+        # --- NEW CODE TO FETCH THE RIGHT NUMBER OF COMMENTS ---
+        number_of_comments = settings.config["reddit"]["thread"]["number_of_comments"]
+        comment_buffer = settings.config["reddit"]["thread"]["comment_buffer"]
+        limit = number_of_comments + comment_buffer
+        comments_to_process = submission.comments[:limit]
+        
+        for top_level_comment in comments_to_process: # <-- THIS LINE WAS CHANGED
             if isinstance(top_level_comment, MoreComments):
                 continue
 

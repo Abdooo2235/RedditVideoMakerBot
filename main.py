@@ -16,7 +16,6 @@ from utils.ffmpeg_install import ffmpeg_install
 from utils.id import id
 from utils.version import checkversion
 from video_creation.background import (
-    chop_background,
     download_background_audio,
     download_background_video,
     get_background_config,
@@ -56,7 +55,6 @@ def main(POST_ID=None) -> None:
     }
     download_background_video(bg_config["video"])
     download_background_audio(bg_config["audio"])
-    chop_background(bg_config, length, reddit_object)
     make_final_video(number_of_comments, length, reddit_object, bg_config)
 
 
