@@ -69,6 +69,28 @@ def get_subreddit_threads(POST_ID: str):
             subreddit_choice = subreddit_choice[2:]
         subreddit = reddit.subreddit(subreddit_choice)
 
+    # Read sorting preferences from config (optional)
+    sort_pref = (
+        str(settings.config["reddit"]["thread"].get("sort", "hot")).casefold()
+        if isinstance(settings.config.get("reddit", {}).get("thread", {}), dict)
+        else "hot"
+    )
+    time_filter_pref = (
+        str(settings.config["reddit"]["thread"].get("time_filter", "day")).casefold()
+        if isinstance(settings.config.get("reddit", {}).get("thread", {}), dict)
+        else "day"
+    )
+
+    def fetch_threads(limit: int):
+        if sort_pref == "top":
+            return subreddit.top(time_filter=time_filter_pref, limit=limit)
+        if sort_pref == "new":
+            return subreddit.new(limit=limit)
+        if sort_pref == "rising":
+            return subreddit.rising(limit=limit)
+        # default to hot
+        return subreddit.hot(limit=limit)
+
     if POST_ID:  # would only be called if there are multiple queued posts
         submission = reddit.submission(id=POST_ID)
 
@@ -78,7 +100,7 @@ def get_subreddit_threads(POST_ID: str):
     ):
         submission = reddit.submission(id=settings.config["reddit"]["thread"]["post_id"])
     elif settings.config["ai"]["ai_similarity_enabled"]:  # ai sorting based on comparison
-        threads = subreddit.hot(limit=50)
+        threads = fetch_threads(limit=50)
         keywords = settings.config["ai"]["ai_similarity_keywords"].split(",")
         keywords = [keyword.strip() for keyword in keywords]
         # Reformat the keywords for printing
@@ -89,7 +111,7 @@ def get_subreddit_threads(POST_ID: str):
             threads, subreddit, similarity_scores=similarity_scores
         )
     else:
-        threads = subreddit.hot(limit=25)
+        threads = fetch_threads(limit=25)
         submission = get_subreddit_undone(threads, subreddit)
 
     if submission is None:

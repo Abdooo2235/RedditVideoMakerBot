@@ -65,6 +65,10 @@ def get_background_config(mode: str):
         print_substep("No background selected. Picking random background'")
         choice = None
 
+    # For audio mode, empty string means no audio
+    if mode == "audio" and choice == "":
+        return ["", "", ""]
+    
     # Handle default / not supported background using default option.
     # Default : pick random from supported background.
     if not choice or choice not in background_options[mode]:
@@ -78,7 +82,9 @@ def download_background_video(background_config: Tuple[str, str, str, Any]):
     Path("./assets/backgrounds/video/").mkdir(parents=True, exist_ok=True)
     # note: make sure the file name doesn't include an - in it
     uri, filename, credit, _ = background_config
-    if Path(f"assets/backgrounds/video/{credit}-{filename}").is_file():
+    video_path = Path(f"assets/backgrounds/video/{credit}-{filename}")
+    if video_path.is_file():
+        print_substep(f"Background video already exists: {video_path}", style="bold green")
         return
     print_step(
         "We need to download the backgrounds videos. they are fairly large but it's only done once. 😎"
@@ -86,9 +92,12 @@ def download_background_video(background_config: Tuple[str, str, str, Any]):
     print_substep("Downloading the backgrounds videos... please be patient 🙏 ")
     print_substep(f"Downloading {filename} from {uri}")
     ydl_opts = {
-        "format": "bestvideo[height<=1080][ext=mp4]",
+        "format": "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best",
         "outtmpl": f"assets/backgrounds/video/{credit}-{filename}",
+        "merge_output_format": "mp4",
         "retries": 10,
+        "quiet": True,
+        "no_warnings": True,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -97,6 +106,10 @@ def download_background_video(background_config: Tuple[str, str, str, Any]):
 
 
 def download_background_audio(background_config: Tuple[str, str, str]):
+    if not background_config[0]:
+        print("No background audio set in config. Skipping audio download.")
+        return
+
     """Downloads the background/s audio from YouTube."""
     Path("./assets/backgrounds/audio/").mkdir(parents=True, exist_ok=True)
     # note: make sure the file name doesn't include an - in it
